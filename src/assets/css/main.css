@@ -1,0 +1,15 @@
+@import url("./fonts.css");
+
+:root {
+  --font-display: "IranSans", "Poppins", sans-serif;
+}
+
+html[lang="fa"] body,
+body {
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+html[data-theme="dark"] body {
+  background-color: #141414;
+}

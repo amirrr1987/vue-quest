@@ -1,0 +1,93 @@
+---
+description: استانداردهای محصول و UI/UX برای اپ یادگیری Vue
+alwaysApply: true
+---
+
+# اپ یادگیری Vue (vue-hr)
+
+## محصول
+
+اپ فارسی RTL برای یادگیری JS/TS/Vue و اکوسیستم (Pinia، Vue Router، VueUse، Ant Design Vue) از مبتدی تا CTO. هر تکنولوژی یک **دوره** با **فصل‌ها**؛ سوالات استاتیک از JSON.
+
+## جریان UX
+
+1. **داشبورد** — آمار کلی + کارت دوره‌ها
+2. **دوره** — فهرست فصل‌ها با پیشرفت و تعداد اشتباه
+3. **آزمون** `/quiz` — همه سوالات فصل (فیلتر سطح اختیاری)
+4. **تمرین اشتباهات** `/wrong` — فقط سوالات غلط؛ پاسخ درست = حذف از لیست
+
+**نه** فلش‌کارت flip — اشتباهات یک **آزمون یکپارچه** هستند.
+
+## پشته فنی
+
+- Vue 3 + TypeScript + Pinia + vue-router
+- **ant-design-vue 4** (اولویت UI)
+- `@iconify/vue` با آیکن‌های `tabler:*` برای آیکن
+- `i18next-vue` فقط برای **برچسب UI**؛ متن سوالات در JSON فارسی
+- `@vueuse/core` (localStorage)، `@vueuse/head`، `@vueuse/router`
+- **Bun** برای install/run
+
+## قوانین UI
+
+- **اولویت با کامپوننت ant-design-vue**: `Card`, `Flex`, `Space`, `Row`/`Col`, `Typography`, `Button`, `Tag`, `List`, `Segmented`, `Progress`, `Statistic`, `Avatar`, `Tooltip`, `Popconfirm`, `Alert`, `Result`, `Empty`, `Badge`
+- **ممنوع**: Tailwind، CSS سفارشی، `!important`، کلاس‌های utility
+- **inline style** فقط برای موارد بسیار محدود مجاز: `maxWidth`, `padding/margin` به px وقتی توکن antd جواب نمی‌دهد، رنگ‌های متنی از پالت antd
+- توکن‌های ظاهری در [`src/theme/app-theme.ts`](src/theme/app-theme.ts) — تنها مکان برای تغییر visual style
+- صفحات با `<AppPage>` (centered, max-width 1200) و `<PageHeader>` با avatar
+- آیکن دکمه‌ها از `tabler:*` با اندازه ۱۶px
+- دکمهٔ اصلی هر صفحه: `type="primary"` با آیکن مرتبط
+
+## برند بصری دوره‌ها
+
+هر دوره یک آیکن + رنگ + پس‌زمینه در [`src/constants/module-brand.ts`](src/constants/module-brand.ts) دارد. از `<BrandAvatar :module-id="...">` استفاده کن.
+
+## UX Writing (فارسی)
+
+- لحن دوستانه و تشویقی، بدون «شما»؛ از خطاب «تو» استفاده کن
+- CTA فعل‌محور: «شروع آزمون»، «تمرین اشتباهات»، «ورود به دوره»
+- پیام خالی/خطا: **چرا** + **قدم بعدی** + دکمه CTA
+- جداکنندهٔ مسیر: `·` (نه `—` نه `-`)
+- اعداد و درصد در ant: فارسی توسط locale خودش
+- کلیدهای i18n در [`src/locales/fa_IR.json`](src/locales/fa_IR.json) — همه متن‌های UI از آنجا
+
+## معماری
+
+```
+src/
+  components/
+    common/          # BrandAvatar
+    layout/          # AppPage, PageHeader
+    quiz/            # ModuleCard, SectionList, QuestionRenderer, QuizActions, ...
+  composables/       # useQuizSession, useModuleProgress, useQuizRouteParams
+  constants/         # learning-levels, module-brand
+  data/
+    modules.json
+    questions/*.json # یک QuizModule کامل
+  services/quiz-loader.ts
+  stores/            # progress.store, theme.store
+  theme/app-theme.ts
+  types/quiz.types.ts
+  views/             # DashboardView, ModuleDetailView, QuizView, NotFoundView
+```
+
+## مدل داده
+
+سوال: `single` | `multi` | `trueFalse` — سطح: `foundation` | `intermediate` | `advanced` | `expert` | `cto`
+
+اعتبارسنجی در dev از `quiz-validation.ts` هشدار می‌دهد.
+
+## پیشرفت (Pinia)
+
+- کلید بخش: `moduleId:sectionId`
+- `wrongBySection` — id سوالات غلط برای آزمون `/wrong`
+- `answeredIdsBySection` — سوالات یکتای پاسخ‌داده‌شده
+- `recordAnswer(...)` — درست = حذف از wrong، غلط = اضافه
+
+## تست و Build (Bun)
+
+```bash
+bun run dev
+bun run type-check
+bun run test:unit
+bun run build
+```
