@@ -50,7 +50,7 @@
       </Flex>
 
       <Space wrap>
-        <Button type="primary" @click="emit('quiz')">
+        <Button type="primary" @click="emit('quiz')" class="flex! items-center">
           <template #icon>
             <Icon icon="tabler:player-play" :width="16" :height="16" />
           </template>
@@ -60,6 +60,7 @@
           <Button
             :disabled="progress.wrongCount === 0"
             @click="emit('wrongQuiz')"
+            class="flex! items-center"
           >
             <template #icon>
               <Icon icon="tabler:refresh" :width="16" :height="16" />
@@ -75,7 +76,7 @@
           @confirm="emit('reset')"
         >
           <Tooltip :title="t('resetSection')">
-            <Button danger type="text" :aria-label="t('resetSection')">
+            <Button danger type="text" :aria-label="t('resetSection')" class="flex! items-center">
               <template #icon>
                 <Icon icon="tabler:trash" :width="16" :height="16" />
               </template>

@@ -1,6 +1,6 @@
 <template>
   <Flex justify="space-between" align="center" wrap="wrap" gap="small">
-    <Button :disabled="!canPrev" @click="emit('prev')">
+    <Button :disabled="!canPrev" @click="emit('prev')" class="flex! items-center">
       <template #icon>
         <Icon icon="tabler:arrow-right" :width="16" :height="16" />
       </template>
@@ -14,6 +14,7 @@
         size="large"
         :disabled="!canSubmit"
         @click="emit('submit')"
+        class="flex! items-center"
       >
         <template #icon>
           <Icon icon="tabler:check" :width="16" :height="16" />
@@ -27,6 +28,7 @@
         size="large"
         :disabled="!canNext"
         @click="emit('next')"
+        class="flex! items-center"
       >
         {{ nextLabel }}
         <template #icon>
@@ -34,7 +36,7 @@
         </template>
       </Button>
 
-      <Button v-else type="primary" size="large" @click="emit('finish')">
+      <Button v-else type="primary" size="large" @click="emit('finish')" class="flex! items-center">
         <template #icon>
           <Icon icon="tabler:flag-check" :width="16" :height="16" />
         </template>

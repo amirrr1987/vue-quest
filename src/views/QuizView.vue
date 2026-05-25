@@ -1,62 +1,29 @@
 <template>
   <template v-if="module && section">
     <AppPage :max-width="820">
-      <QuizPageHeader
-        :title="pageTitle"
-        :sub-title="pageSubTitle"
-        :module-id="module.id"
-        @back="onBack"
-      >
+      <QuizPageHeader :title="pageTitle" :sub-title="pageSubTitle" :module-id="module.id" @back="onBack">
         <template v-if="resumed" #extra>
           <Tag color="processing" :bordered="false">
-            <Icon
-              icon="tabler:player-play"
-              :width="12"
-              :height="12"
-              :style="{ verticalAlign: 'middle', marginInlineEnd: '4px' }"
-            />
+            <Icon icon="tabler:player-play" :width="12" :height="12"
+              :style="{ verticalAlign: 'middle', marginInlineEnd: '4px' }" />
             {{ t('resumeBadge') }}
           </Tag>
         </template>
       </QuizPageHeader>
 
-      <Transition
-        :css="false"
-        @enter="slideTransition.onEnter"
-        @leave="slideTransition.onLeave"
-      >
-        <Alert
-          v-if="isWrongQuiz && total > 0"
-          type="warning"
-          show-icon
-          :message="t('wrongQuizBanner')"
-          :description="t('wrongQuizHint', { count: total })"
-        />
+      <Transition :css="false" @enter="slideTransition.onEnter" @leave="slideTransition.onLeave">
+        <Alert v-if="isWrongQuiz && total > 0" type="warning" show-icon :message="t('wrongQuizBanner')"
+          :description="t('wrongQuizHint', { count: total })" />
       </Transition>
 
-      <Transition
-        :css="false"
-        @enter="slideTransition.onEnter"
-        @leave="slideTransition.onLeave"
-      >
-        <Alert
-          v-if="resumed && !finished && total > 0 && showResumeBanner"
-          type="info"
-          show-icon
-          closable
-          :message="t('resumeMessage')"
-          :description="t('resumeDescription', { current: currentIndex + 1, total })"
-          @close="showResumeBanner = false"
-        >
+      <Transition :css="false" @enter="slideTransition.onEnter" @leave="slideTransition.onLeave">
+        <Alert v-if="resumed && !finished && total > 0 && showResumeBanner" type="info" show-icon closable
+          :message="t('resumeMessage')" :description="t('resumeDescription', { current: currentIndex + 1, total })"
+          @close="showResumeBanner = false">
           <template #action>
-            <Popconfirm
-              :title="t('restartConfirm')"
-              ok-text="بله، شروع از نو"
-              cancel-text="انصراف"
-              :ok-button-props="{ danger: true }"
-              @confirm="onRestart"
-            >
-              <Button size="small" type="text">
+            <Popconfirm :title="t('restartConfirm')" ok-text="بله، شروع از نو" cancel-text="انصراف"
+              :ok-button-props="{ danger: true }" @confirm="onRestart">
+              <Button size="small" type="text" class="flex! items-center">
                 <template #icon>
                   <Icon icon="tabler:refresh" :width="14" :height="14" />
                 </template>
@@ -71,105 +38,59 @@
 
       <Card v-if="total > 0 && !finished" :bordered="false">
         <Flex vertical gap="large">
-          <QuizProgress
-            :percent="progressPercent"
-            :label="progressLabel"
-            :statuses="questionStatuses"
-            @jump="onJump"
-          />
+          <QuizProgress :percent="progressPercent" :label="progressLabel" :statuses="questionStatuses" @jump="onJump" />
 
-          <Transition
-            :css="false"
-            mode="out-in"
-            @enter="questionSlide.onEnter"
-            @leave="questionSlide.onLeave"
-          >
+          <Transition :css="false" mode="out-in" @enter="questionSlide.onEnter" @leave="questionSlide.onLeave">
             <div :key="currentQuestion?.id ?? 'empty'" ref="questionAreaRef">
-              <QuestionRenderer
-                v-if="currentQuestion"
-                :question="currentQuestion"
-                :selected-ids="selectedIds"
-                :disabled="submitted"
-                :reveal-answer="submitted"
-                :skipped="lastSkipped"
-                @update:selected-ids="selectedIds = $event"
-                @skip="onSkip"
-              />
+              <QuestionRenderer v-if="currentQuestion" :question="currentQuestion" :selected-ids="selectedIds"
+                :disabled="submitted" :reveal-answer="submitted" :skipped="lastSkipped"
+                @update:selected-ids="selectedIds = $event" @skip="onSkip" />
             </div>
           </Transition>
 
-          <Transition
-            :css="false"
-            @enter="feedbackEnter"
-            @leave="fadeTransition.onLeave"
-          >
+          <Transition :css="false" @enter="feedbackEnter" @leave="fadeTransition.onLeave">
             <div v-if="submitted" ref="feedbackRef" :key="currentQuestion?.id + '-fb'">
-              <Alert
-                :type="lastSkipped ? 'warning' : lastCorrect ? 'success' : 'error'"
+              <Alert :type="lastSkipped ? 'warning' : lastCorrect ? 'success' : 'error'"
                 :message="lastSkipped ? t('skipped') : lastCorrect ? t('correct') : t('incorrect')"
-                :description="currentQuestion?.explanation"
-                show-icon
-              />
+                :description="currentQuestion?.explanation" show-icon />
             </div>
           </Transition>
 
           <Divider :style="{ margin: 0 }" />
 
-          <QuizActions
-            :submitted="submitted"
-            :finished="finished"
-            :reviewing="isReviewing"
-            :can-submit="selectedIds.length > 0 && !submitted"
-            :can-prev="currentIndex > 0"
-            :can-next="submitted"
-            :is-last="currentIndex === total - 1"
-            @prev="prevQuestion"
-            @submit="submitAnswer"
-            @next="nextQuestion"
-            @finish="onFinish"
-          />
+          <QuizActions :submitted="submitted" :finished="finished" :reviewing="isReviewing"
+            :can-submit="selectedIds.length > 0 && !submitted" :can-prev="currentIndex > 0" :can-next="submitted"
+            :is-last="currentIndex === total - 1" @prev="prevQuestion" @submit="submitAnswer" @next="nextQuestion"
+            @finish="onFinish" />
 
           <Typography.Text type="secondary" :style="{ fontSize: '12px' }">
-            <Icon
-              icon="tabler:keyboard"
-              :width="12"
-              :height="12"
-              :style="{ verticalAlign: 'middle', marginInlineEnd: '4px' }"
-            />
+            <Icon icon="tabler:keyboard" :width="12" :height="12"
+              :style="{ verticalAlign: 'middle', marginInlineEnd: '4px' }" />
             {{ t('keyboardHints') }}
           </Typography.Text>
         </Flex>
       </Card>
 
-      <Transition
-        :css="false"
-        @enter="resultEnter"
-      >
+      <Transition :css="false" @enter="resultEnter">
         <div v-if="finished" ref="resultRef">
-          <Result
-            status="success"
-            :title="isWrongQuiz ? t('wrongQuizComplete') : t('quizComplete')"
-            :sub-title="resultSubTitle"
-          >
+          <Result status="success" :title="isWrongQuiz ? t('wrongQuizComplete') : t('quizComplete')"
+            :sub-title="resultSubTitle">
             <template #extra>
               <Space wrap>
-                <Button
-                  v-if="!isWrongQuiz && wrongInSection > 0"
-                  size="large"
-                  @click="goWrongQuiz"
-                >
+                <Button v-if="!isWrongQuiz && wrongInSection > 0" size="large" @click="goWrongQuiz"
+                  class="flex! items-center">
                   <template #icon>
                     <Icon icon="tabler:refresh" :width="16" :height="16" />
                   </template>
                   {{ t('wrongQuizCta') }}
                 </Button>
-                <Button size="large" @click="onRestart">
+                <Button size="large" @click="onRestart" class="flex! items-center">
                   <template #icon>
                     <Icon icon="tabler:rotate-clockwise" :width="16" :height="16" />
                   </template>
                   {{ t('restartSession') }}
                 </Button>
-                <Button type="primary" size="large" @click="goBack">
+                <Button type="primary" size="large" @click="goBack" class="flex! items-center">
                   {{ t('backToModule') }}
                 </Button>
               </Space>
@@ -178,12 +99,9 @@
         </div>
       </Transition>
 
-      <Transition
-        :css="false"
-        @enter="slideTransition.onEnter"
-      >
+      <Transition :css="false" @enter="slideTransition.onEnter">
         <Empty v-if="total === 0 && !finished" :description="emptyDescription">
-          <Button type="primary" @click="goBack">
+          <Button type="primary" @click="goBack" class="flex! items-center">
             {{ isWrongQuiz ? t('emptyReviewCta') : t('back') }}
           </Button>
         </Empty>
@@ -192,7 +110,7 @@
   </template>
   <Result v-else status="404" :title="t('sectionNotFound')">
     <template #extra>
-      <Button type="primary" @click="router.push({ name: RouteEnum.Dashboard })">
+      <Button type="primary" @click="router.push({ name: RouteEnum.Dashboard })" class="flex! items-center">
         {{ t('goHome') }}
       </Button>
     </template>

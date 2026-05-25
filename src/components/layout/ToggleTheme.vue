@@ -1,5 +1,5 @@
 <template>
-  <Button type="default" class="absolute! top-4 left-4 z-10" :aria-label="isDark ? t('themeLight') : t('themeDark')" @click="toggleTheme">
+  <Button type="default" class="absolute! top-4 left-4 z-10 flex! items-center" :aria-label="isDark ? t('themeLight') : t('themeDark')" @click="toggleTheme">
     <template #icon>
       <Icon :icon="isDark ? 'tabler:sun' : 'tabler:moon'" :width="16" :height="16" />
     </template>

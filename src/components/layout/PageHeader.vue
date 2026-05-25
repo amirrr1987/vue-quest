@@ -7,6 +7,7 @@
         shape="circle"
         :aria-label="t('back')"
         @click="emit('back')"
+        class="flex! items-center"
       >
         <template #icon>
           <Icon icon="tabler:arrow-right" :width="18" :height="18" />
