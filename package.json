@@ -23,6 +23,7 @@
     "@vueuse/head": "^2.0.0",
     "@vueuse/router": "^14.3.0",
     "ant-design-vue": "^4.2.6",
+    "gsap": "^3.15.0",
     "i18next-vue": "^5.4.0",
     "nprogress": "^0.2.0",
     "pinia": "^3.0.4",

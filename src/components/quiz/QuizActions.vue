@@ -6,9 +6,10 @@
       </template>
       {{ t('prev') }}
     </Button>
-    <Space>
+
+    <Space wrap>
       <Button
-        v-if="!submitted"
+        v-if="!submitted && !reviewing"
         type="primary"
         size="large"
         :disabled="!canSubmit"
@@ -19,17 +20,20 @@
         </template>
         {{ t('submit') }}
       </Button>
+
       <Button
         v-else-if="!finished"
         type="primary"
         size="large"
+        :disabled="!canNext"
         @click="emit('next')"
       >
-        {{ t('next') }}
+        {{ nextLabel }}
         <template #icon>
-          <Icon icon="tabler:arrow-left" :width="16" :height="16" />
+          <Icon :icon="nextIcon" :width="16" :height="16" />
         </template>
       </Button>
+
       <Button v-else type="primary" size="large" @click="emit('finish')">
         <template #icon>
           <Icon icon="tabler:flag-check" :width="16" :height="16" />
@@ -41,15 +45,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Button, Flex, Space } from 'ant-design-vue'
 import { Icon } from '@iconify/vue'
 import { useTranslation } from 'i18next-vue'
 
-defineProps<{
+const props = defineProps<{
   submitted: boolean
   finished: boolean
+  reviewing: boolean
   canSubmit: boolean
   canPrev: boolean
+  canNext: boolean
+  isLast: boolean
 }>()
 
 const emit = defineEmits<{
@@ -60,4 +68,14 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useTranslation()
+
+const nextLabel = computed(() => {
+  if (props.isLast && props.submitted) return t('finish')
+  return t('next')
+})
+
+const nextIcon = computed(() => {
+  if (props.isLast && props.submitted) return 'tabler:flag-check'
+  return 'tabler:arrow-left'
+})
 </script>

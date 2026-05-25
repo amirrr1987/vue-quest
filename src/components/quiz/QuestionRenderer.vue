@@ -30,13 +30,23 @@
           v-for="opt in question.options"
           :key="opt.id"
           size="small"
-          hoverable
-          :body-style="optionBodyStyle"
+          :hoverable="!disabled"
+          :body-style="optionBodyStyle(opt.id)"
+          :style="optionCardStyle(opt.id)"
           @click="onOptionClick(opt.id, false)"
         >
-          <Radio :value="opt.id" :disabled="disabled">
-            {{ opt.text }}
-          </Radio>
+          <Flex align="center" justify="space-between" gap="small">
+            <Radio :value="opt.id" :disabled="disabled">
+              {{ opt.text }}
+            </Radio>
+            <Icon
+              v-if="resultIcon(opt.id)"
+              :icon="resultIcon(opt.id)!.icon"
+              :width="18"
+              :height="18"
+              :style="{ color: resultIcon(opt.id)!.color, flexShrink: 0 }"
+            />
+          </Flex>
         </Card>
       </Flex>
     </Radio.Group>
@@ -53,13 +63,23 @@
           v-for="opt in question.options"
           :key="opt.id"
           size="small"
-          hoverable
-          :body-style="optionBodyStyle"
+          :hoverable="!disabled"
+          :body-style="optionBodyStyle(opt.id)"
+          :style="optionCardStyle(opt.id)"
           @click="onOptionClick(opt.id, true)"
         >
-          <Checkbox :value="opt.id" :disabled="disabled">
-            {{ opt.text }}
-          </Checkbox>
+          <Flex align="center" justify="space-between" gap="small">
+            <Checkbox :value="opt.id" :disabled="disabled">
+              {{ opt.text }}
+            </Checkbox>
+            <Icon
+              v-if="resultIcon(opt.id)"
+              :icon="resultIcon(opt.id)!.icon"
+              :width="18"
+              :height="18"
+              :style="{ color: resultIcon(opt.id)!.color, flexShrink: 0 }"
+            />
+          </Flex>
         </Card>
       </Flex>
     </Checkbox.Group>
@@ -95,6 +115,8 @@ const props = defineProps<{
   question: Question
   selectedIds: string[]
   disabled?: boolean
+  /** پس از submit برای رنگ‌آمیزی صحیح/غلط فعال می‌شود */
+  revealAnswer?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -102,8 +124,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useTranslation()
-
-const optionBodyStyle = { padding: '12px 16px' }
 
 const typeMeta: Record<QuestionType, { label: string; icon: string; color: string; hint: string | null }> = {
   single: {
@@ -145,6 +165,59 @@ const segmentedOptions = computed(() =>
     value: opt.id,
   })),
 )
+
+/**
+ * وضعیت visual یک گزینه بعد از reveal:
+ *  - correct: گزینه از پاسخ‌های صحیح
+ *  - missed-correct: صحیح بود ولی کاربر انتخاب نکرد
+ *  - wrong: کاربر اشتباه انتخاب کرد
+ *  - selected: انتخاب فعلی (قبل از reveal)
+ */
+type OptionVisual = 'correct' | 'missed-correct' | 'wrong' | 'selected' | 'idle'
+
+function optionVisual(optionId: string): OptionVisual {
+  const isCorrect = props.question.correctIds.includes(optionId)
+  const isSelected = props.selectedIds.includes(optionId)
+  if (props.revealAnswer) {
+    if (isCorrect && isSelected) return 'correct'
+    if (isCorrect && !isSelected) return 'missed-correct'
+    if (!isCorrect && isSelected) return 'wrong'
+    return 'idle'
+  }
+  return isSelected ? 'selected' : 'idle'
+}
+
+const VISUAL_STYLES: Record<OptionVisual, { border: string; bg: string }> = {
+  correct: { border: '#52c41a', bg: '#f6ffed' },
+  'missed-correct': { border: '#faad14', bg: '#fffbe6' },
+  wrong: { border: '#ff4d4f', bg: '#fff1f0' },
+  selected: { border: '#1677ff', bg: '#e6f4ff' },
+  idle: { border: 'transparent', bg: 'transparent' },
+}
+
+function optionCardStyle(optionId: string) {
+  const v = optionVisual(optionId)
+  const s = VISUAL_STYLES[v]
+  return {
+    borderColor: s.border,
+    backgroundColor: s.bg,
+    transition: 'border-color 0.15s, background-color 0.15s',
+  }
+}
+
+function optionBodyStyle(_optionId: string) {
+  return { padding: '12px 16px' }
+}
+
+function resultIcon(optionId: string): { icon: string; color: string } | null {
+  if (!props.revealAnswer) return null
+  const v = optionVisual(optionId)
+  if (v === 'correct') return { icon: 'tabler:circle-check', color: '#52c41a' }
+  if (v === 'missed-correct')
+    return { icon: 'tabler:alert-circle', color: '#faad14' }
+  if (v === 'wrong') return { icon: 'tabler:circle-x', color: '#ff4d4f' }
+  return null
+}
 
 function onSingleChange(val: string) {
   emit('update:selectedIds', [val])
