@@ -36,6 +36,7 @@
       wrap="wrap"
       :gap="4"
       :style="{ marginTop: '2px' }"
+      ref="dotsContainerRef"
     >
       <Tooltip
         v-for="(s, i) in statuses"
@@ -46,6 +47,7 @@
           type="button"
           :aria-label="dotTooltip(s, i)"
           :style="dotStyle(s)"
+          :ref="(el) => setDotRef(i, el as HTMLElement | null)"
           @click="emit('jump', i)"
         />
       </Tooltip>
@@ -54,10 +56,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, nextTick, type ComponentPublicInstance } from 'vue'
 import { Flex, Progress, Space, Tag, Tooltip, Typography } from 'ant-design-vue'
 import { Icon } from '@iconify/vue'
 import { useTranslation } from 'i18next-vue'
+import gsap from 'gsap'
 
 export type QuestionStatus = 'correct' | 'wrong' | 'current' | 'pending'
 
@@ -74,11 +77,42 @@ const emit = defineEmits<{
 const { t } = useTranslation()
 
 const statuses = computed<QuestionStatus[]>(() => props.statuses ?? [])
-const correctCount = computed(
-  () => statuses.value.filter((s) => s === 'correct').length,
-)
-const wrongCount = computed(
-  () => statuses.value.filter((s) => s === 'wrong').length,
+const correctCount = computed(() => statuses.value.filter((s) => s === 'correct').length)
+const wrongCount = computed(() => statuses.value.filter((s) => s === 'wrong').length)
+
+const dotsContainerRef = ref<ComponentPublicInstance | null>(null)
+const dotRefs = new Map<number, HTMLElement>()
+
+function setDotRef(i: number, el: HTMLElement | null) {
+  if (el) dotRefs.set(i, el)
+  else dotRefs.delete(i)
+}
+
+const prevStatuses = ref<QuestionStatus[]>([])
+
+watch(
+  statuses,
+  async (next, prev) => {
+    if (!prev || prev.length === 0) {
+      prevStatuses.value = [...next]
+      return
+    }
+    await nextTick()
+    for (let i = 0; i < next.length; i++) {
+      if (next[i] !== prevStatuses.value[i]) {
+        const el = dotRefs.get(i)
+        if (el) {
+          gsap.fromTo(
+            el,
+            { scale: 0.3 },
+            { scale: 1, duration: 0.35, ease: 'back.out(3)' },
+          )
+        }
+      }
+    }
+    prevStatuses.value = [...next]
+  },
+  { deep: true },
 )
 
 const DOT_COLORS: Record<QuestionStatus, { bg: string; border: string }> = {
@@ -98,7 +132,7 @@ function dotStyle(s: QuestionStatus) {
     border: `2px solid ${c.border}`,
     padding: 0,
     cursor: 'pointer',
-    transition: 'transform 0.15s',
+    transition: 'background 0.2s, border-color 0.2s, width 0.2s, height 0.2s',
     boxShadow: s === 'current' ? '0 0 0 3px rgba(22,119,255,0.18)' : 'none',
   }
 }
