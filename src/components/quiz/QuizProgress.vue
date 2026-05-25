@@ -62,7 +62,7 @@ import { Icon } from '@iconify/vue'
 import { useTranslation } from 'i18next-vue'
 import gsap from 'gsap'
 
-export type QuestionStatus = 'correct' | 'wrong' | 'current' | 'pending'
+export type QuestionStatus = 'correct' | 'wrong' | 'skipped' | 'current' | 'pending'
 
 const props = defineProps<{
   percent: number
@@ -118,6 +118,7 @@ watch(
 const DOT_COLORS: Record<QuestionStatus, { bg: string; border: string }> = {
   correct: { bg: '#52c41a', border: '#52c41a' },
   wrong: { bg: '#ff4d4f', border: '#ff4d4f' },
+  skipped: { bg: '#faad14', border: '#faad14' },
   current: { bg: '#fff', border: '#1677ff' },
   pending: { bg: 'rgba(0,0,0,0.06)', border: 'rgba(0,0,0,0.12)' },
 }
@@ -141,6 +142,7 @@ function dotTooltip(s: QuestionStatus, i: number) {
   const num = i + 1
   if (s === 'correct') return t('dotCorrect', { num })
   if (s === 'wrong') return t('dotWrong', { num })
+  if (s === 'skipped') return t('dotSkipped', { num })
   if (s === 'current') return t('dotCurrent', { num })
   return t('dotPending', { num })
 }

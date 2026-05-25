@@ -91,7 +91,9 @@
                 :selected-ids="selectedIds"
                 :disabled="submitted"
                 :reveal-answer="submitted"
+                :skipped="lastSkipped"
                 @update:selected-ids="selectedIds = $event"
+                @skip="onSkip"
               />
             </div>
           </Transition>
@@ -103,8 +105,8 @@
           >
             <div v-if="submitted" ref="feedbackRef" :key="currentQuestion?.id + '-fb'">
               <Alert
-                :type="lastCorrect ? 'success' : 'error'"
-                :message="lastCorrect ? t('correct') : t('incorrect')"
+                :type="lastSkipped ? 'warning' : lastCorrect ? 'success' : 'error'"
+                :message="lastSkipped ? t('skipped') : lastCorrect ? t('correct') : t('incorrect')"
                 :description="currentQuestion?.explanation"
                 show-icon
               />
@@ -276,6 +278,7 @@ const {
   selectedIds,
   submitted,
   lastCorrect,
+  lastSkipped,
   finished,
   resumed,
   sessionCorrect,
@@ -286,6 +289,7 @@ const {
   questionStatuses,
   navDirection,
   submitAnswer: doSubmit,
+  skipQuestion,
   nextQuestion,
   prevQuestion,
   jumpTo,
@@ -334,6 +338,13 @@ function submitAnswer() {
   nextTick(() => {
     if (lastCorrect.value === true) pulseElement(feedbackRef.value)
     else if (lastCorrect.value === false) shakeElement(feedbackRef.value)
+  })
+}
+
+function onSkip() {
+  skipQuestion()
+  nextTick(() => {
+    shakeElement(feedbackRef.value)
   })
 }
 
@@ -403,6 +414,11 @@ function onKey(e: KeyboardEvent) {
   if (e.key === 'ArrowRight') { e.preventDefault(); if (currentIndex.value > 0) prevQuestion(); return }
   if (e.key === 'ArrowLeft') { e.preventDefault(); if (submitted.value) nextQuestion(); return }
   if (submitted.value) return
+  if (e.key === '0') {
+    e.preventDefault()
+    onSkip()
+    return
+  }
   const q = currentQuestion.value
   if (!q.options) return
   const num = Number(e.key)

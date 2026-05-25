@@ -6,12 +6,13 @@ import {
   watch,
   type MaybeRefOrGetter,
 } from 'vue'
-import type {
-  ActiveSession,
-  LearningLevel,
-  Question,
-  QuizMode,
-  SessionAnswer,
+import {
+  SKIP_OPTION_ID,
+  type ActiveSession,
+  type LearningLevel,
+  type Question,
+  type QuizMode,
+  type SessionAnswer,
 } from '@/types/quiz.types'
 import {
   getQuestionById,
@@ -50,9 +51,9 @@ export function useQuizSession(
   const selectedIds = ref<string[]>([])
   const submitted = ref(false)
   const lastCorrect = ref<boolean | null>(null)
+  const lastSkipped = ref(false)
   const finished = ref(false)
   const resumed = ref(false)
-  /** جهت انیمیشن: 1 = جلو، -1 = عقب */
   const navDirection = ref<1 | -1>(1)
 
   function currentMode(): QuizMode {
@@ -150,10 +151,12 @@ export function useQuizSession(
       selectedIds.value = [...prior.selectedIds]
       submitted.value = true
       lastCorrect.value = prior.correct
+      lastSkipped.value = prior.skipped ?? false
     } else {
       selectedIds.value = []
       submitted.value = false
       lastCorrect.value = null
+      lastSkipped.value = false
     }
     finished.value = false
   }
@@ -197,7 +200,10 @@ export function useQuizSession(
     const sess = progressStore.getActiveSession()
     return questions.value.map((q, i) => {
       const a = sess?.history[q.id]
-      if (a) return a.correct ? 'correct' : 'wrong'
+      if (a) {
+        if (a.skipped) return 'skipped'
+        return a.correct ? 'correct' : 'wrong'
+      }
       if (i === currentIndex.value) return 'current'
       return 'pending'
     })
@@ -227,13 +233,25 @@ export function useQuizSession(
     const question = currentQuestion.value
     if (!question || selectedIds.value.length === 0 || submitted.value) return
 
-    const correct = areAnswersCorrect(question, selectedIds.value)
+    const isSkip = selectedIds.value.length === 1 && selectedIds.value[0] === SKIP_OPTION_ID
+    const correct = isSkip ? false : areAnswersCorrect(question, selectedIds.value)
     lastCorrect.value = correct
+    lastSkipped.value = isSkip
     submitted.value = true
 
-    const answer: SessionAnswer = { selectedIds: [...selectedIds.value], correct }
+    const answer: SessionAnswer = {
+      selectedIds: isSkip ? [] : [...selectedIds.value],
+      correct,
+      skipped: isSkip || undefined,
+    }
     progressStore.recordSessionAnswer(question.id, answer)
     progressStore.recordAnswer(toValue(moduleId), toValue(sectionId), question.id, correct)
+  }
+
+  function skipQuestion() {
+    if (submitted.value) return
+    selectedIds.value = [SKIP_OPTION_ID]
+    submitAnswer()
   }
 
   function jumpTo(index: number) {
@@ -248,10 +266,12 @@ export function useQuizSession(
       selectedIds.value = [...prior.selectedIds]
       submitted.value = true
       lastCorrect.value = prior.correct
+      lastSkipped.value = prior.skipped ?? false
     } else {
       selectedIds.value = []
       submitted.value = false
       lastCorrect.value = null
+      lastSkipped.value = false
     }
   }
 
@@ -294,9 +314,9 @@ export function useQuizSession(
   }
 
   return {
-    questions, currentQuestion, currentIndex, selectedIds, submitted, lastCorrect,
+    questions, currentQuestion, currentIndex, selectedIds, submitted, lastCorrect, lastSkipped,
     finished, resumed, sessionCorrect, sessionAnswered, total, progressPercent,
     isWrongOnlyMode, isReviewing, questionStatuses, navDirection,
-    toggleSelection, submitAnswer, nextQuestion, prevQuestion, jumpTo, restartSession,
+    toggleSelection, submitAnswer, skipQuestion, nextQuestion, prevQuestion, jumpTo, restartSession,
   }
 }

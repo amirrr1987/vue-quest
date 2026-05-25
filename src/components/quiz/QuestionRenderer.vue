@@ -20,10 +20,10 @@
 
     <Radio.Group
       v-if="question.type === 'single'"
-      :value="selectedIds[0]"
+      :value="isSkipSelected ? undefined : selectedIds[0]"
       :disabled="disabled"
       :style="{ width: '100%' }"
-      @update:value="onSingleChange"
+      @update:value="onSingleChangeWrapped"
     >
       <Flex vertical gap="small" ref="optionsRef">
         <Card
@@ -56,10 +56,10 @@
 
     <Checkbox.Group
       v-else-if="question.type === 'multi'"
-      :value="selectedIds"
+      :value="isSkipSelected ? [] : selectedIds"
       :disabled="disabled"
       :style="{ width: '100%' }"
-      @update:value="onMultiChange"
+      @update:value="onMultiChangeWrapped"
     >
       <Flex vertical gap="small" ref="optionsRef">
         <Card
@@ -95,10 +95,26 @@
       block
       size="large"
       :disabled="disabled"
-      :value="selectedIds[0]"
+      :value="isSkipSelected ? undefined : selectedIds[0]"
       :options="segmentedOptions"
       @update:value="onTrueFalseChange"
     />
+
+    <Card
+      size="small"
+      :hoverable="!disabled"
+      :body-style="optionBodyStyle"
+      :style="skipCardStyle"
+      class="option-card"
+      @click="onSkipClick"
+    >
+      <Flex align="center" justify="center" gap="small">
+        <Icon icon="tabler:help" :width="18" :height="18" :style="{ flexShrink: 0, color: skipIconColor }" />
+        <Typography.Text :strong="isSkipSelected" :style="{ color: skipIconColor }">
+          {{ t('iDontKnow') }}
+        </Typography.Text>
+      </Flex>
+    </Card>
   </Flex>
 </template>
 
@@ -116,7 +132,7 @@ import {
 import { Icon } from '@iconify/vue'
 import { useTranslation } from 'i18next-vue'
 import gsap from 'gsap'
-import type { Question, QuestionType } from '@/types/quiz.types'
+import { SKIP_OPTION_ID, type Question, type QuestionType } from '@/types/quiz.types'
 import { popIn } from '@/composables/useGsap'
 
 const props = defineProps<{
@@ -124,10 +140,12 @@ const props = defineProps<{
   selectedIds: string[]
   disabled?: boolean
   revealAnswer?: boolean
+  skipped?: boolean
 }>()
 
 const emit = defineEmits<{
   'update:selectedIds': [ids: string[]]
+  'skip': []
 }>()
 
 const { t } = useTranslation()
@@ -162,9 +180,9 @@ function iconEnter(el: Element, done: () => void) {
 const optionBodyStyle = { padding: '12px 16px' }
 
 const typeMeta: Record<QuestionType, { label: string; icon: string; color: string; hint: string | null }> = {
-  single: { label: t('typeSingle'), icon: 'tabler:circle-dot', color: 'blue', hint: t('hintSingle') },
-  multi: { label: t('typeMulti'), icon: 'tabler:checkbox', color: 'purple', hint: t('hintMulti') },
-  trueFalse: { label: t('typeTrueFalse'), icon: 'tabler:toggle-left', color: 'cyan', hint: null },
+  single: { label: t('typeSingle'), icon: 'tabler:circle-dot', color: 'blue', hint: t('hintSingleOrSkip') },
+  multi: { label: t('typeMulti'), icon: 'tabler:checkbox', color: 'purple', hint: t('hintMultiOrSkip') },
+  trueFalse: { label: t('typeTrueFalse'), icon: 'tabler:toggle-left', color: 'cyan', hint: t('hintTrueFalseOrSkip') },
 }
 
 const typeLabel = computed(() => typeMeta[props.question.type].label)
@@ -224,21 +242,65 @@ function resultIcon(optionId: string): { icon: string; color: string } | null {
   return null
 }
 
-function onSingleChange(val: string) { emit('update:selectedIds', [val]) }
-function onMultiChange(vals: Array<string | number | boolean>) {
-  emit('update:selectedIds', vals.map((v) => String(v)))
-}
 function onTrueFalseChange(val: string | number) { emit('update:selectedIds', [String(val)]) }
 
 function onOptionClick(id: string, multiple: boolean) {
   if (props.disabled) return
   if (multiple) {
-    const set = new Set(props.selectedIds)
+    const set = new Set(props.selectedIds.filter((s) => s !== SKIP_OPTION_ID))
     if (set.has(id)) set.delete(id)
     else set.add(id)
     emit('update:selectedIds', [...set])
   } else {
     emit('update:selectedIds', [id])
   }
+}
+
+function onSingleChangeWrapped(val: string) {
+  emit('update:selectedIds', [val])
+}
+
+function onMultiChangeWrapped(vals: Array<string | number | boolean>) {
+  emit('update:selectedIds', vals.map((v) => String(v)).filter((s) => s !== SKIP_OPTION_ID))
+}
+
+const isSkipSelected = computed(() =>
+  props.selectedIds.length === 1 && props.selectedIds[0] === SKIP_OPTION_ID,
+)
+
+const skipIconColor = computed(() => {
+  if (props.revealAnswer && props.skipped) return '#faad14'
+  if (isSkipSelected.value) return '#faad14'
+  return 'rgba(0,0,0,0.35)'
+})
+
+const skipCardStyle = computed(() => {
+  if (props.revealAnswer && props.skipped) {
+    return {
+      borderColor: '#faad14',
+      backgroundColor: '#fffbe6',
+      borderStyle: 'dashed' as const,
+      transition: 'border-color 0.2s ease, background-color 0.2s ease',
+    }
+  }
+  if (isSkipSelected.value) {
+    return {
+      borderColor: '#faad14',
+      backgroundColor: '#fffbe6',
+      borderStyle: 'dashed' as const,
+      transition: 'border-color 0.2s ease, background-color 0.2s ease',
+    }
+  }
+  return {
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
+    borderStyle: 'dashed' as const,
+    transition: 'border-color 0.2s ease, background-color 0.2s ease',
+  }
+})
+
+function onSkipClick() {
+  if (props.disabled) return
+  emit('skip')
 }
 </script>

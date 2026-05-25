@@ -60,9 +60,14 @@ export type QuizMode = 'normal' | 'wrong'
  * تاریخچه یک پاسخ در طول جلسه — سبک‌ترین حالت ممکن.
  * فقط ids ذخیره می‌شود تا حجم localStorage و memory حداقل باشد.
  */
+/** id ثابت برای گزینه «نمی‌دانم» — هرگز نباید با id واقعی گزینه‌ها تداخل کند. */
+export const SKIP_OPTION_ID = '__skip__'
+
 export interface SessionAnswer {
   selectedIds: string[]
   correct: boolean
+  /** کاربر «نمی‌دانم» زده — غلط ثبت می‌شود ولی UX متفاوت نشان می‌دهد */
+  skipped?: boolean
 }
 
 /**
